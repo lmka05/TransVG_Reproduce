@@ -63,12 +63,11 @@ class TextTransform:
             input_ids (list[int]): [max_len] — token IDs
             attention_mask (list[int]): [max_len] — 1 cho token thật, 0 cho PAD
         """
-        # encode_plus tự động:
         #   1. Lowercase (vì bert-base-uncased)
         #   2. Tokenize bằng WordPiece
         #   3. Thêm [CLS] ở đầu, [SEP] ở cuối
         #   4. Pad hoặc cắt về max_length
-        encoded = self.tokenizer.encode_plus(
+        encoded = self.tokenizer(
             text,
             max_length=self.max_len,
             padding="max_length",      # Pad đến max_length
