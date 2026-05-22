@@ -1,11 +1,11 @@
 # ==============================================================================
 # datasets/dataset.py — RefCOCO Dataset cho TransVG
 # ==============================================================================
-# Xử lý ảnh giống SeqTR (đơn giản):
+# Xử lý ảnh:
 #   1. Load ảnh → numpy
 #   2. Resize giữ tỉ lệ (cạnh dài = 640)
 #   3. Pad về 640×640
-#   4. Normalize /255 → [0,1]
+#   4. Normalize theo ImageNet mean/std (bắt buộc vì fine-tune ResNet pretrained)
 #   5. Tạo image mask cho Transformer
 #   6. BERT tokenize câu
 #   7. Chuyển bbox về normalized xywh
@@ -27,7 +27,8 @@ from torch.utils.data import Dataset
 from utils.image_transforms import (
     resize_image_keep_ratio,
     pad_image_to_square,
-    normalize_image,
+    normalize_image,     # [CŨ] dùng cho SeqTR, ResNet đóng băng
+    normalize_imagenet,  # [MỚI] dùng cho TransVG, fine-tune ResNet pretrained
     image_to_tensor,
     create_image_mask,
 )
@@ -99,8 +100,10 @@ class RefCOCODataset(Dataset):
         resized_h, resized_w = img.shape[:2]
 
         img = pad_image_to_square(img, self.imsize)
-        img = normalize_image(img)     # /255 → [0, 1]
-        img = image_to_tensor(img)     # [3, 640, 640]
+        # [CŨ] img = normalize_image(img)    # /255 → [0, 1]  (dùng cho SeqTR)
+        # [MỚI] Normalize theo ImageNet mean/std (bắt buộc cho ResNet pretrained)
+        img = normalize_imagenet(img)          # ~[-2, +2]
+        img = image_to_tensor(img)             # [3, 640, 640]
 
         # ==================================================================
         # 3. TẠO IMAGE MASK (chỉ TransVG cần, SeqTR không cần)

@@ -50,13 +50,16 @@ class Config:
     # 6. TRAINING
     # ==========================================================================
     optimizer = "adamw"      # Optimizer (chỉ dùng AdamW)
-    lr = 1e-4                # LR cho VL Transformer + MLP (train mạnh)
-    lr_bert = 1e-5           # LR cho BERT (fine-tune nhẹ)
-    lr_visu_cnn = 1e-5       # LR cho ResNet backbone (fine-tune nhẹ)
-    lr_visu_tra = 1e-5       # LR cho DETR Encoder (fine-tune nhẹ)
+    # [CŨ] LR theo paper (batch=64): lr=1e-4, lr_bert/cnn/tra=1e-5
+    # [MỚI] Scale xuống theo Linear Scaling Rule: lr_new = lr_paper × (batch/batch_paper)
+    #        = lr_paper × (8/64) = lr_paper × 0.125
+    lr          = 1.25e-5    # LR cho VL Transformer + MLP  (1e-4  × 8/64)
+    lr_bert     = 1.25e-6    # LR cho BERT                  (1e-5  × 8/64)
+    lr_visu_cnn = 1.25e-6    # LR cho ResNet backbone        (1e-5  × 8/64)
+    lr_visu_tra = 1.25e-6    # LR cho DETR Encoder           (1e-5  × 8/64)
     weight_decay = 1e-4
     batch_size = 8
-    epochs = 30
+    epochs = 90
     lr_scheduler = "step"    # "step", "cosine"
     lr_drop = 60             # Epoch giảm lr (cho step scheduler)
     clip_max_norm = 0.15     # Gradient clipping

@@ -8,7 +8,8 @@ from .text_transforms import TextTransform
 from .image_transforms import (
     resize_image_keep_ratio,
     pad_image_to_square,
-    normalize_image,
+    normalize_image,        # [CŨ] dùng cho SeqTR
+    normalize_imagenet,     # [MỚI] dùng cho TransVG (ResNet pretrained)
     image_to_tensor,
     create_image_mask,
 )

@@ -1,14 +1,15 @@
 # ==============================================================================
-# image_transforms.py — Xử lý ảnh đơn giản (giống SeqTR)
+# image_transforms.py — Xử lý ảnh đơn giản cho TransVG
 # ==============================================================================
-# Chỉ 4 hàm cơ bản:
+# 5 hàm cơ bản:
 #   1. resize_image_keep_ratio() — resize giữ tỉ lệ
 #   2. pad_image_to_square()     — pad về hình vuông 640×640
-#   3. normalize_image()         — chia 255 về [0, 1]
-#   4. create_image_mask()       — tạo mask cho Transformer
+#   3. normalize_image()         — chia 255 về [0, 1]  (giống SeqTR)
+#   4. normalize_imagenet()      — ImageNet mean/std     (cho TransVG+ResNet pretrained)
+#   5. create_image_mask()       — tạo mask cho Transformer
 #
 # So với TransVG_Reimplement (cũ): bỏ toàn bộ augmentation (crop, flip, jitter...)
-# So với SeqTR: giống hệt, chỉ thêm create_image_mask()
+# So với SeqTR: giống hệt, chỉ thêm normalize_imagenet() và create_image_mask()
 # ==============================================================================
 
 import numpy as np
@@ -75,8 +76,41 @@ def normalize_image(img):
     """
     Normalize pixel values: [0, 255] → [0, 1]
     Giống SeqTR (đơn giản chia 255, không dùng ImageNet mean/std).
+
+    [CŨ] Dùng cho SeqTR (ResNet bị đóng băng, input distribution ít quan trọng hơn)
+    [KHÔNG DÙNG] cho TransVG vì đang fine-tune ResNet pretrained
     """
     return img.astype(np.float32) / 255.0
+
+
+def normalize_imagenet(img):
+    """
+    Normalize theo ImageNet mean/std — bắt buộc khi fine-tune ResNet pretrained.
+
+    ResNet pretrained trên ImageNet kỳ vọng input được normalize:
+        mean = [0.485, 0.456, 0.406]  (trên kênh R, G, B)
+        std  = [0.229, 0.224, 0.225]
+
+    Pipeline:
+        uint8 [0,255] → float32 /255 → [0,1] → (x - mean) / std → ~[-2, +2]
+
+    Tại sao cần?
+        Nếu không normalize đúng, feature maps của ResNet sẽ sai lệch
+        so với lúc pretrain → loss cao và khó hội tụ.
+
+    Args:
+        img (np.ndarray): Ảnh đã resize+pad [H, W, 3], dtype=uint8 hoặc float32
+
+    Returns:
+        img (np.ndarray): [H, W, 3], dtype=float32, giá trị ~[-2, +2]
+    """
+    img = img.astype(np.float32) / 255.0
+
+    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+    std  = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+
+    img = (img - mean) / std
+    return img
 
 
 def image_to_tensor(img):
