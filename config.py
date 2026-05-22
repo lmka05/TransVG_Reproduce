@@ -56,7 +56,7 @@ class Config:
     lr_visu_tra = 1e-5       # LR cho DETR Encoder (fine-tune nhẹ)
     weight_decay = 1e-4
     batch_size = 8
-    epochs = 90
+    epochs = 30
     lr_scheduler = "step"    # "step", "cosine"
     lr_drop = 60             # Epoch giảm lr (cho step scheduler)
     clip_max_norm = 0.15     # Gradient clipping

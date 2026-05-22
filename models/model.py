@@ -131,18 +131,36 @@ class TransVG(nn.Module):
         # 6. MLP Head → bbox
         self.bbox_embed = MLP(hidden_dim, hidden_dim, 4, num_layers=3)
 
-    def forward(self, img_data, text_data):
+    # [CŨ] Nhận 2 NestedTensor — KHÔNG tương thích DataParallel
+    # def forward(self, img_data, text_data):
+    #     bs = img_data.tensors.shape[0]
+    #     visu_mask, visu_src = self.visumodel(img_data)
+    #     text_fea = self.textmodel(text_data)
+    #     ...
+
+    # [MỚI] Nhận 4 tensor thuần — DataParallel tự chia batch được
+    def forward(self, img_tensors, img_mask, word_ids, word_mask):
         """
         Forward pass.
 
+        Nhận 4 tensor thuần (thay vì 2 NestedTensor) để DataParallel
+        có thể tự động chia batch cho nhiều GPU.
+
         Args:
-            img_data:  NestedTensor(img [B,3,640,640], mask [B,640,640])
-            text_data: NestedTensor(word_ids [B,17], word_mask [B,17])
+            img_tensors: Tensor [B, 3, 640, 640] — ảnh
+            img_mask:    Tensor [B, 640, 640] — True=padding, False=ảnh thật
+            word_ids:    Tensor [B, 17] — BERT token IDs
+            word_mask:   Tensor [B, 17] — 1=token thật, 0=padding
 
         Returns:
             pred_box: Tensor [B, 4] — (x_c, y_c, w, h) normalized ∈ [0,1]
         """
-        bs = img_data.tensors.shape[0]
+        bs = img_tensors.shape[0]
+
+        # Gói lại thành NestedTensor (backbone và BERT cần format này)
+        from utils.misc import NestedTensor
+        img_data = NestedTensor(img_tensors, img_mask)
+        text_data = NestedTensor(word_ids, word_mask)
 
         # =====================================================================
         # Step 1: Visual backbone → 400 tokens

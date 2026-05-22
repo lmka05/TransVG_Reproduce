@@ -108,7 +108,10 @@ def evaluate(model, dataloader, device, desc="Evaluating"):
         target = target.to(device)
 
         # Forward
-        pred_boxes = model(img_data, text_data)  # [B, 4] normalized xywh
+        # [CŨ] pred_boxes = model(img_data, text_data)
+        # [MỚI] Tách NestedTensor → 4 tensor thuần (tương thích DataParallel)
+        pred_boxes = model(img_data.tensors, img_data.mask,
+                           text_data.tensors, text_data.mask)  # [B, 4] normalized xywh
 
         # Chuyển sang xyxy để tính IoU
         pred_xyxy = xywh2xyxy(pred_boxes)

@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import os
+import torch.nn as nn
 import sys
 import math
 import time
@@ -50,9 +51,15 @@ def save_checkpoint(model, optimizer, scheduler, epoch, accuracy, best_accuracy,
     """Lưu checkpoint."""
     os.makedirs(config.output_dir, exist_ok=True)
 
+    # [MỚI] Lấy model gốc bên trong DataParallel (nếu có)
+    # DataParallel wrap thêm 1 lớp .module → state_dict keys sẽ có prefix 'module.'
+    # → load lại trên 1 GPU sẽ lỗi. Luôn save model gốc.
+    # [CŨ] 'model_state_dict': model.state_dict(),
+    raw_model = model.module if hasattr(model, 'module') else model
+
     checkpoint = {
         'epoch': epoch,
-        'model_state_dict': model.state_dict(),
+        'model_state_dict': raw_model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'scheduler_state_dict': scheduler.state_dict(),
         'accuracy': accuracy,
@@ -95,11 +102,19 @@ def train_one_epoch(model, dataloader, optimizer, device, epoch, config):
         target = target.to(device)
 
         # 2. Forward
-        pred_box = model(img_data, text_data)  # [B, 4]
+        # [CŨ] pred_box = model(img_data, text_data)
+        # [MỚI] Tách NestedTensor → 4 tensor thuần (để DataParallel chia batch được)
+        pred_box = model(img_data.tensors, img_data.mask,
+                         text_data.tensors, text_data.mask)  # [B, 4]
 
         # 3. Loss
         losses = trans_vg_loss(pred_box, target)
         loss = losses['loss_bbox'] + losses['loss_giou']
+
+        # [MỚI] DataParallel trả loss từ mỗi GPU → cần mean
+        if loss.dim() > 0:
+            loss = loss.mean()
+
         loss_value = loss.item()
 
         # 4. Check NaN
@@ -153,6 +168,14 @@ def main():
     train_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Total params:     {total_params:,}")
     print(f"Trainable params: {train_params:,}")
+
+    # [MỚI] Multi-GPU: wrap model bằng DataParallel (giống SeqTR)
+    num_gpus = torch.cuda.device_count()
+    if num_gpus > 1:
+        print(f"\n🚀 Using {num_gpus} GPUs with DataParallel!")
+        model = nn.DataParallel(model)
+    else:
+        print(f"\nUsing 1 GPU")
 
     # 2. Optimizer — 4 param groups
     print("\n" + "=" * 60)
@@ -213,7 +236,10 @@ def main():
     if os.path.exists(latest_ckpt):
         print(f"\nResuming from {latest_ckpt}")
         ckpt = torch.load(latest_ckpt, map_location=device, weights_only=False)
-        model.load_state_dict(ckpt['model_state_dict'])
+        # [MỚI] Load vào model gốc (bên trong DataParallel nếu có)
+        # [CŨ] model.load_state_dict(ckpt['model_state_dict'])
+        raw_model = model.module if hasattr(model, 'module') else model
+        raw_model.load_state_dict(ckpt['model_state_dict'])
         optimizer.load_state_dict(ckpt['optimizer_state_dict'])
         scheduler.load_state_dict(ckpt['scheduler_state_dict'])
         start_epoch = ckpt['epoch'] + 1
