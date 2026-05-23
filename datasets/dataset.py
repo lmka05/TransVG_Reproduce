@@ -75,7 +75,7 @@ class RefCOCODataset(Dataset):
 
     def __getitem__(self, index):
         """
-        Lấy 1 sample. Pipeline xử lý giống SeqTR:
+        Lấy 1 sample.
 
         Ảnh:  load → resize giữ tỉ lệ → pad 640×640 → /255 → tensor
         Text: BERT tokenize → (word_ids, attention_mask)
@@ -90,8 +90,10 @@ class RefCOCODataset(Dataset):
             self.img_dir,
             "COCO_train2014_%012d.jpg" % ann['image_id']
         )
-        pil_img = Image.open(img_path).convert('RGB')
-        img = np.array(pil_img)
+
+        with Image.open(img_path) as pil_img :
+            img = np.array(pil_img.convert('RGB'))
+
 
         # ==================================================================
         # 2. RESIZE + PAD + NORMALIZE (giống SeqTR)

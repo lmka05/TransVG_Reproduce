@@ -133,6 +133,11 @@ def train_one_epoch(model, dataloader, optimizer, device, epoch, config):
         total_loss += loss_value
         num_batches += 1
 
+        # [FIX] Dọn dẹp RAM ngay trong loop để không rò rỉ rác giữa các batch
+        del img_data, text_data, target, pred_box, losses, loss
+        if batch_idx % 100 == 0:
+            gc.collect()
+            
         # 7. Log (giống SeqTR)
         if (batch_idx + 1) % config.log_interval == 0:
             avg = total_loss / num_batches

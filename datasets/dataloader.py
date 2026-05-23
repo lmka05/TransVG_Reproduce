@@ -30,6 +30,7 @@ def build_dataloader(dataset, batch_size, shuffle=True, num_workers=2):
         shuffle=shuffle,
         num_workers=num_workers,
         collate_fn=collate_fn,
-        pin_memory=True,
+        pin_memory=False,
         drop_last=(shuffle == True),  # Drop batch cuối khi train
+        persistent_workers=(num_workers > 0)
     )
