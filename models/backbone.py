@@ -94,10 +94,10 @@ class Backbone(nn.Module):
     def __init__(self, name='resnet50', dilation=False):
         super().__init__()
 
-        # Tạo ResNet-50 với FrozenBatchNorm (KHÔNG load pretrained ở đây)
+        # Tạo ResNet-50 với FrozenBatchNorm 
         backbone = getattr(torchvision.models, name)(
             replace_stride_with_dilation=[False, False, dilation],
-            weights=None,
+            weights='IMAGENET1K_V1',
             norm_layer=FrozenBatchNorm2d
         )
 

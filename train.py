@@ -168,7 +168,21 @@ def main():
     print("=" * 60)
     model = build_model(config)
     model.to(device)
-
+    
+    # [MỚI] Load DETR pretrain nếu có
+    if hasattr(config, 'detr_model') and config.detr_model is not None:
+        if os.path.exists(config.detr_model):
+            print(f"\n--- Loading DETR pretrain from {config.detr_model} ---")
+            checkpoint = torch.load(config.detr_model, map_location='cpu', weights_only=False)
+            # Load đè vào nhánh visual của model (model.visumodel chính là VisualEncoder)
+            # strict=False vì cấu trúc có thể có vài key thừa/thiếu nhỏ xíu
+            missing_keys, unexpected_keys = model.visumodel.load_state_dict(checkpoint['model'], strict=False)
+            print(f"Missing keys: {len(missing_keys)}")
+            print(f"Unexpected keys: {len(unexpected_keys)}")
+            print("=> Đã tải thành công tệp DETR pretrain cho ResNet-50 và DETR Encoder!")
+        else:
+            print(f"\n⚠️ CẢNH BÁO: Không tìm thấy file DETR pretrain tại: {config.detr_model}")
+            print("=> Model sẽ train Visual nhánh từ đầu (hoặc ImageNet)!")
     total_params = sum(p.numel() for p in model.parameters())
     train_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Total params:     {total_params:,}")

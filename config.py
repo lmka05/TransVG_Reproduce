@@ -11,7 +11,7 @@ class Config:
     # ==========================================================================
     img_dir = "/kaggle/input/datasets/jeffaudi/coco-2014-dataset-for-yolov3/coco2014/images/train2014"
     ann_file = "/kaggle/input/datasets/minhkhoai/seqtr-annotations-weights/annotations/refcoco-unc/instances.json"
-
+    dert_model = "/kaggle/input/datasets/minhkhoai/detr-pretrained/detr-r50-e632da11.pth"
     # ==========================================================================
     # 2. KÍCH THƯỚC ĐẦU VÀO
     # ==========================================================================
@@ -60,7 +60,7 @@ class Config:
     weight_decay = 1e-4
     batch_size = 8
     epochs = 90
-    lr_scheduler = "step"    # "step", "cosine"
+    lr_scheduler = "step"    # "step", "cosine" 
     lr_drop = 60             # Epoch giảm lr (cho step scheduler)
     clip_max_norm = 0.15     # Gradient clipping
 
@@ -69,7 +69,7 @@ class Config:
     # ==========================================================================
     log_interval = 80        # In log mỗi N batches
     output_dir = "/kaggle/working/transvg_outputs"
-    resume = ""              # Đường dẫn checkpoint để resume training
+    resume = "  "              # Đường dẫn checkpoint để resume training
 
     # ==========================================================================
     # 8. MISC
