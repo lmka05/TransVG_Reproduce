@@ -11,7 +11,7 @@ class Config:
     # ==========================================================================
     img_dir = "/kaggle/input/datasets/jeffaudi/coco-2014-dataset-for-yolov3/coco2014/images/train2014"
     ann_file = "/kaggle/input/datasets/minhkhoai/seqtr-annotations-weights/annotations/refcoco-unc/instances.json"
-    dert_model = "/kaggle/input/datasets/minhkhoai/detr-pretrained/detr-r50-e632da11.pth"
+    detr_model = "/kaggle/input/datasets/minhkhoai/detr-pretrained/detr-r50-e632da11.pth"
     # ==========================================================================
     # 2. KÍCH THƯỚC ĐẦU VÀO
     # ==========================================================================
