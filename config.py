@@ -75,5 +75,5 @@ class Config:
     # 8. MISC
     # ==========================================================================
     seed = 13
-    num_workers = 2
+    num_workers = 0
     device = "cuda"
